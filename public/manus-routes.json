@@ -1,0 +1,13 @@
+{
+  "routes": [
+    { "path": "/", "title": "Overview" },
+    { "path": "/login", "title": "Sign in" },
+    { "path": "/students", "title": "Students" },
+    { "path": "/staff", "title": "Staff" },
+    { "path": "/attendance", "title": "Attendance" },
+    { "path": "/results", "title": "Results" },
+    { "path": "/settings", "title": "Settings" },
+    { "path": "/privacy", "title": "Privacy" },
+    { "path": "/terms", "title": "Terms" }
+  ]
+}
