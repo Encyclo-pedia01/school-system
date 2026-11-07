@@ -11,7 +11,9 @@ npm ci
 cp .env.example .env.local
 ```
 
-Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the public project URL and publishable/anon key from the Supabase project. `NEXT_PUBLIC_SITE_URL` is optional; when unset, the sitemap derives its origin from the request host. `NEXT_PUBLIC_GA_MEASUREMENT_ID` is optional; the script remains inactive unless it is configured and a user allows optional analytics. Do not put a service-role key in a `NEXT_PUBLIC_` variable or commit `.env.local`.
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the project URL and legacy public anon JWT key from Supabase. `NEXT_PUBLIC_SITE_URL` is optional; when unset, the sitemap derives its origin from the request host. `NEXT_PUBLIC_GA_MEASUREMENT_ID` is optional; the script remains inactive unless it is configured and a user allows optional analytics. Do not put a service-role key in a `NEXT_PUBLIC_` variable or commit `.env.local`.
+
+For Vercel setup, production/preview separation, and read-only connection checks, see [Vercel environment setup](docs/VERCEL_ENVIRONMENT.md).
 
 Start the app with `npm run dev`. Before deploying, run `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
