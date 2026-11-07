@@ -1,44 +1,56 @@
-'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/utils/supabase'
+import type { Metadata } from "next";
+import { Suspense } from "react";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+import { LegalFooter } from "@/components/legal-footer";
+import { LoginForm } from "@/app/(auth)/login/login-form";
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      router.push('/')
-      router.refresh()
-    }
-  }
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to the School Manager operations workspace.",
+};
+
+type LoginPageProps = {
+  searchParams: Promise<{ setup?: string }>;
+};
+
+export default function LoginPage({ searchParams }: LoginPageProps) {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function LoginContent({ searchParams }: LoginPageProps) {
+  const { setup } = await searchParams;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md space-y-6">
-        <h2 className="text-2xl font-bold text-center text-gray-900">School Manager Login</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input type="email" placeholder="Email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border p-3 rounded-md" />
-          <input type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border p-3 rounded-md" />
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 disabled:opacity-50">
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
-      </div>
-    </div>
-  )
+    <main id="main-content" className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
+      <section aria-labelledby="login-heading" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9">
+        <div className="mb-7 flex items-center gap-3">
+          <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-lg bg-blue-800 font-semibold text-white">S</span>
+          <div>
+            <p className="font-semibold tracking-tight text-blue-950">School Manager</p>
+            <p className="text-xs text-slate-500">Operations workspace</p>
+          </div>
+        </div>
+        <h1 id="login-heading" className="text-2xl font-semibold tracking-tight text-slate-950">Sign in</h1>
+        <p className="mb-7 mt-2 text-sm leading-6 text-slate-600">Use your school account to continue.</p>
+        <LoginForm setupError={setup === "supabase"} />
+      </section>
+      <div className="w-full max-w-md"><LegalFooter /></div>
+    </main>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <main id="main-content" className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
+      <section role="status" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Sign in</h1>
+        <p className="mt-2 text-sm text-slate-600">Loading secure sign-in…</p>
+      </section>
+      <div className="w-full max-w-md"><LegalFooter /></div>
+    </main>
+  );
 }
