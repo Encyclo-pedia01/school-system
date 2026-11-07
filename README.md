@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# School Manager
 
-## Getting Started
+A multi-tenant school operations workspace built with Next.js App Router, Supabase Auth, and PostgreSQL. The application keeps institution data behind membership-scoped row-level security and uses database functions for result calculation, staff check-ins, insights, and audit history.
 
-First, run the development server:
+## Local setup
+
+Use Node.js 20.9 or newer. Install the locked dependencies and copy the environment template:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the public project URL and publishable/anon key from the Supabase project. `NEXT_PUBLIC_SITE_URL` is optional; when unset, the sitemap derives its origin from the request host. `NEXT_PUBLIC_GA_MEASUREMENT_ID` is optional; the script remains inactive unless it is configured and a user allows optional analytics. Do not put a service-role key in a `NEXT_PUBLIC_` variable or commit `.env.local`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Start the app with `npm run dev`. Before deploying, run `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database rollout
 
-## Learn More
+The migrations in `supabase/migrations/` are additive to the supplied core schema and must be applied in filename order. They create terms, students, staff, enrolments, student attendance, institution settings, and check-ins; extend result fields; replace policies on the listed tenant tables; and install the grading, check-in, audit, and insight functions/triggers.
 
-To learn more about Next.js, take a look at the following resources:
+Review the existing policies and production data in a staging project first. The tenant-policy migration replaces existing policies on its listed tables to remove permissive-policy overlap. Apply the migrations through the project's normal Supabase migration workflow, then verify RLS and role behavior with separate owner, principal, authority, and assigned/unassigned staff accounts. Do not apply the SQL directly to production without the institution's normal backup and change-control process.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The current schema export did not include column defaults or table constraints. The migrations therefore add UUID defaults where the application writes rows. They do not delete or rewrite student, staff, result, or audit records. The grading RPC rejects a submission if it encounters multiple legacy result rows for the same institution, student, class, term, and subject so the records can be reviewed rather than overwritten arbitrarily.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Data required for workflows
 
-## Deploy on Vercel
+The schema needs institution memberships before a user can enter the dashboard. Results also require a term, class, active student enrolment, class assignment for staff, at least one assessment with a maximum score, and a principal/owner grading key. Staff check-ins require an active staff record linked to the authority user's account when a station is assigned to that user. The existing app does not include general-purpose CRUD for all of those setup records; seed or manage them through the institution's approved administrative workflow.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Authorized attendance and result submissions invoke the insight generator, and dashboard users can refresh it on demand. The generator is also exposed as `public.generate_institution_insights(uuid)` for a future scheduled invocation; no cron schedule is installed by these migrations. Student, staff, and result changes are appended to `audit_log` with before/after JSON.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Security notes
+
+- Tenant access is based on the signed-in user's active `memberships` row and `institution_id`.
+- Only authority members can insert staff check-ins. Check-in time and status are set in PostgreSQL using the institution timezone and school start time.
+- Result and raw assessment-score writes go through `public.submit_student_result`; direct client writes are not granted. The RPC verifies membership, assigned class, active enrolment, assessment maxima, and grading-key weights before calculating `final_grade`.
+- The dashboard is internal. `robots.txt` disallows all crawlers, and the sitemap contains only sign-in and legal routes. These directives are not access control; Supabase RLS remains the security boundary.
+- Insight details are generated by the database. Authorized members can transition open alerts to actioned or dismissed.
+
+## Support and privacy
+
+Support: [joegady94@gmail.com](mailto:joegady94@gmail.com). The product footer intentionally omits a physical address until one is provided. See the in-app [Privacy](/privacy) and [Terms](/terms) pages.
